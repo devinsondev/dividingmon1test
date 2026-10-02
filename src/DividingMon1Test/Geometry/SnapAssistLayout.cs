@@ -30,7 +30,7 @@ public static class SnapAssistLayout
         };
     }
 
-    private static IReadOnlyList<Rectangle> GetRemainingQuarters(Rectangle area, SnapKind occupied)
+    private static Rectangle[] GetRemainingQuarters(Rectangle area, SnapKind occupied)
     {
         return QuarterKinds
             .Where(kind => kind != occupied)
