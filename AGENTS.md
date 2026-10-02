@@ -35,7 +35,7 @@ While the user drags a normal top-level window:
 - touching one of its corners previews and snaps to that quarter;
 - a visible non-activating overlay shows the exact destination before release;
 - dragging on displays other than the configured target is not modified;
-- by default, a physical-edge guard reserves the real outer target-display edges for Windows Snap while our outer logical edges are activated on inset virtual rails.
+- by default, documented Windows edge docking is temporarily suppressed only while an active drag pointer is inside the configured target display.
 
 After a half or quarter snap, optional Snap Assist suggestions MUST stay inside that same logical submonitor:
 - half snap -> offer windows for the opposite half only;
@@ -122,12 +122,13 @@ Never keep snapping after the move ends.
 
 Starting a new drag cancels any open Snap Assist session.
 
-Windows Snap compatibility is enabled by default:
-- the real outer edge guard of the target display MUST return no DividingMon snap target;
-- outer half/corner activation MUST use inset virtual rails beyond that guard;
-- internal logical-submonitor edges stay active normally;
-- the primary display and global Windows Snap settings MUST NOT be changed;
-- no registry or undocumented shell toggles may be used to suppress Windows Snap per monitor.
+Windows Snap conflict suppression is enabled by default:
+- use only documented SystemParametersInfo window-arrangement APIs;
+- suppress only dock-moving behavior while an active drag pointer is inside the target display;
+- restore the user's previous dock-moving value immediately when the pointer leaves the target, the drag ends, snapping is disabled, or the app exits;
+- use fWinIni = 0 so the profile/registry is not persisted and no settings-change broadcast is requested;
+- do not alter maximize-hover layouts or unrelated Windows settings;
+- no registry writes or undocumented shell toggles may be used.
 
 ## 8. Verification
 

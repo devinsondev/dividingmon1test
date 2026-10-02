@@ -15,6 +15,8 @@ internal static class NativeMethods
     internal const int ObjIdWindow = 0;
     internal const int ChildIdSelf = 0;
     internal const uint GwOwner = 4;
+    internal const uint SpiGetDockMoving = 0x0090;
+    internal const uint SpiSetDockMoving = 0x0091;
 
     internal const int SwRestore = 9;
     internal const uint SwpNoZOrder = 0x0004;
@@ -109,6 +111,22 @@ internal static class NativeMethods
     internal static extern uint GetWindowThreadProcessId(
         IntPtr window,
         out uint processId);
+
+    [DllImport("user32.dll", EntryPoint = "SystemParametersInfoW", ExactSpelling = true, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SystemParametersInfoGet(
+        uint action,
+        uint parameter,
+        ref int value,
+        uint updateFlags);
+
+    [DllImport("user32.dll", EntryPoint = "SystemParametersInfoW", ExactSpelling = true, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SystemParametersInfoSet(
+        uint action,
+        uint parameter,
+        IntPtr value,
+        uint updateFlags);
 
     [DllImport("user32.dll", ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
