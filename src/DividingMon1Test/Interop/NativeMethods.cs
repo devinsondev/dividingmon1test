@@ -102,7 +102,7 @@ internal static class NativeMethods
     [DllImport("user32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
     internal static extern int GetWindowTextW(
         IntPtr window,
-        StringBuilder text,
+        [Out] char[] text,
         int maximumCount);
 
     [DllImport("user32.dll", ExactSpelling = true)]
