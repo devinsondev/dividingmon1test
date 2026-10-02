@@ -165,12 +165,16 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private void DisposeTargetMenuItems()
     {
-        foreach (ToolStripItem item in _targetMenu.DropDownItems)
+        var items = _targetMenu.DropDownItems
+            .Cast<ToolStripItem>()
+            .ToArray();
+
+        _targetMenu.DropDownItems.Clear();
+
+        foreach (var item in items)
         {
             item.Dispose();
         }
-
-        _targetMenu.DropDownItems.Clear();
     }
 
     protected override void ExitThreadCore()
