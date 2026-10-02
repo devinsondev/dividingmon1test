@@ -22,6 +22,8 @@ internal static class Program
         AssertNoSnap(monitor, new Point(2020, 470));
 
         AssertOddPartitionCoversMonitor();
+        AssertHalfCompanion();
+        AssertQuarterCompanions();
 
         Console.WriteLine("Geometry self-test passed.");
         return 0;
@@ -87,6 +89,47 @@ internal static class Program
             zones[1].Bottom != zones[3].Top)
         {
             throw new InvalidOperationException("Odd-size partition contains a gap or overlap.");
+        }
+    }
+
+    private static void AssertHalfCompanion()
+    {
+        var area = new Rectangle(100, 200, 960, 540);
+        var source = new SnapTarget(
+            1,
+            area,
+            SnapLayout.GetSlice(area, SnapKind.LeftHalf),
+            SnapKind.LeftHalf);
+
+        var slots = SnapAssistLayout.GetRemainingSlots(source);
+        var expected = SnapLayout.GetSlice(area, SnapKind.RightHalf);
+
+        if (slots.Count != 1 || slots[0] != expected)
+        {
+            throw new InvalidOperationException("Half Snap Assist slot is incorrect.");
+        }
+    }
+
+    private static void AssertQuarterCompanions()
+    {
+        var area = new Rectangle(-960, 0, 960, 540);
+        var source = new SnapTarget(
+            2,
+            area,
+            SnapLayout.GetSlice(area, SnapKind.TopLeftQuarter),
+            SnapKind.TopLeftQuarter);
+
+        var slots = SnapAssistLayout.GetRemainingSlots(source);
+        var expected = new[]
+        {
+            SnapLayout.GetSlice(area, SnapKind.TopRightQuarter),
+            SnapLayout.GetSlice(area, SnapKind.BottomLeftQuarter),
+            SnapLayout.GetSlice(area, SnapKind.BottomRightQuarter)
+        };
+
+        if (!slots.SequenceEqual(expected))
+        {
+            throw new InvalidOperationException("Quarter Snap Assist slots are incorrect.");
         }
     }
 }

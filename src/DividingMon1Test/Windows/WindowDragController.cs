@@ -15,6 +15,7 @@ internal sealed class WindowDragController : IDisposable
 
     private readonly TargetDisplayService _displays;
     private readonly PreviewOverlayForm _overlay;
+    private readonly SnapAssistController _snapAssist;
     private readonly NativeMethods.WinEventProc _winEventProc;
     private readonly System.Windows.Forms.Timer _pollTimer;
 
@@ -26,10 +27,12 @@ internal sealed class WindowDragController : IDisposable
 
     internal WindowDragController(
         TargetDisplayService displays,
-        PreviewOverlayForm overlay)
+        PreviewOverlayForm overlay,
+        SnapAssistController snapAssist)
     {
         _displays = displays;
         _overlay = overlay;
+        _snapAssist = snapAssist;
 
         _pollTimer = new System.Windows.Forms.Timer
         {
@@ -68,6 +71,7 @@ internal sealed class WindowDragController : IDisposable
             if (!value)
             {
                 CancelTracking();
+                _snapAssist.Cancel();
             }
         }
     }
@@ -113,6 +117,7 @@ internal sealed class WindowDragController : IDisposable
     private void BeginTracking(IntPtr window)
     {
         CancelTracking();
+        _snapAssist.Cancel();
 
         if (!NativeMethods.IsWindowVisible(window) || LooksLikeBorderResize(window))
         {
@@ -132,9 +137,10 @@ internal sealed class WindowDragController : IDisposable
         _overlay.HidePreview();
         _movingWindow = IntPtr.Zero;
 
-        if (snap is { } target)
+        if (snap is { } target &&
+            WindowSnapper.TrySnap(window, target.Destination))
         {
-            WindowSnapper.TrySnap(window, target.Destination);
+            _snapAssist.Start(target, window);
         }
     }
 

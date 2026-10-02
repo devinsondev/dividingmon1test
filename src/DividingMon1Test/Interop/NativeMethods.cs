@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Runtime.InteropServices;
+using System.Text;
 
 [assembly: DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
 
@@ -13,6 +14,7 @@ internal static class NativeMethods
     internal const uint WinEventSkipOwnProcess = 0x0002;
     internal const int ObjIdWindow = 0;
     internal const int ChildIdSelf = 0;
+    internal const uint GwOwner = 4;
 
     internal const int SwRestore = 9;
     internal const uint SwpNoZOrder = 0x0004;
@@ -29,6 +31,10 @@ internal static class NativeMethods
         int childId,
         uint eventThread,
         uint eventTime);
+
+    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal delegate bool EnumWindowsProc(IntPtr window, IntPtr parameter);
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct NativePoint
@@ -48,6 +54,17 @@ internal static class NativeMethods
         internal int Bottom;
 
         internal readonly Rectangle ToRectangle() => Rectangle.FromLTRB(Left, Top, Right, Bottom);
+
+        internal static NativeRect FromRectangle(Rectangle rectangle)
+        {
+            return new NativeRect
+            {
+                Left = rectangle.Left,
+                Top = rectangle.Top,
+                Right = rectangle.Right,
+                Bottom = rectangle.Bottom
+            };
+        }
     }
 
     [DllImport("user32.dll", ExactSpelling = true, SetLastError = true)]
@@ -66,11 +83,32 @@ internal static class NativeMethods
 
     [DllImport("user32.dll", ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool EnumWindows(EnumWindowsProc callback, IntPtr parameter);
+
+    [DllImport("user32.dll", ExactSpelling = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool GetCursorPos(out NativePoint point);
 
     [DllImport("user32.dll", ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool GetWindowRect(IntPtr window, out NativeRect rect);
+
+    [DllImport("user32.dll", ExactSpelling = true)]
+    internal static extern IntPtr GetWindow(IntPtr window, uint command);
+
+    [DllImport("user32.dll", ExactSpelling = true)]
+    internal static extern int GetWindowTextLengthW(IntPtr window);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+    internal static extern int GetWindowTextW(
+        IntPtr window,
+        StringBuilder text,
+        int maximumCount);
+
+    [DllImport("user32.dll", ExactSpelling = true)]
+    internal static extern uint GetWindowThreadProcessId(
+        IntPtr window,
+        out uint processId);
 
     [DllImport("user32.dll", ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.Bool)]

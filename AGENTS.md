@@ -8,8 +8,8 @@ Build a small Windows 11 user-mode utility that makes one physical secondary dis
 
 The app MUST:
 - use C# and .NET 8;
-- use WinForms only for the tray UI and non-activating preview overlay;
-- use documented Win32 APIs through narrow P/Invoke wrappers when Windows APIs are required;
+- use WinForms only for tray UI, preview overlays, and the interactive Snap Assist picker;
+- use documented Win32/DWM APIs through narrow P/Invoke wrappers when Windows APIs are required;
 - remain a normal user-mode desktop process;
 - require no administrator rights;
 - install no driver, service, scheduled task, shell extension, or kernel component;
@@ -36,6 +36,13 @@ While the user drags a normal top-level window:
 - a visible non-activating overlay shows the exact destination before release;
 - dragging on displays other than the configured target is not modified.
 
+After a half or quarter snap, optional Snap Assist suggestions MUST stay inside that same logical submonitor:
+- half snap -> offer windows for the opposite half only;
+- quarter snap -> offer windows sequentially for the other three quarters only;
+- full-zone snap -> no suggestions;
+- clicking a suggestion is an explicit user action authorizing that selected window to move into the shown slot;
+- suggestions must never fill another logical submonitor automatically.
+
 If the target display disappears, the window handle becomes invalid, a native call fails, or the gesture cannot be classified safely, do nothing.
 
 ## 3. Safety constraints
@@ -55,7 +62,9 @@ Do not:
 
 Global observation must be minimal. A WinEvent hook for move/size lifecycle plus polling the cursor only while a move is in progress is acceptable.
 
-The utility may reposition only the window the user is actively moving.
+The utility may reposition only:
+- the window the user is actively moving; or
+- a top-level window the user explicitly clicks in the Snap Assist picker.
 
 ## 4. Code quality hard constraints
 
@@ -68,10 +77,10 @@ Also mandatory:
 - no god files, god classes, or grab-bag utility classes;
 - no hidden mutable global state;
 - no business/geometry logic inside Forms;
-- Win32 declarations isolated from product logic;
+- Win32/DWM declarations isolated from product logic;
 - pure snapping geometry separated from native window manipulation;
 - deterministic geometry with no unexplained magic numbers;
-- explicit disposal of native hooks, timers, forms, menus, and tray icons;
+- explicit disposal of native hooks, DWM thumbnails, timers, forms, menus, and tray icons;
 - no empty catch blocks;
 - no TODO/placeholder behavior presented as complete;
 - no third-party dependency unless the standard library/Win32 cannot reasonably solve the problem.
@@ -81,12 +90,13 @@ Prefer small explicit code over clever abstractions.
 ## 5. Architecture
 
 Keep these concerns separate:
-- Geometry: pure 2x2 partitioning and snap-target calculation.
+- Geometry: pure 2x2 partitioning, snap-target calculation, and companion-slot calculation.
 - Display selection: enumerate/select the physical target display.
-- Native interop: Win32 declarations and constants only.
+- Native interop: Win32/DWM declarations and constants only.
 - Drag controller: observe move lifecycle and coordinate preview/snap.
-- Window snapper: validate and reposition the tracked window.
-- Overlay: render preview; never decide geometry.
+- Window snapper: validate and reposition an explicitly authorized window.
+- Overlay: render drag preview; never decide geometry.
+- Snap Assist: enumerate candidate top-level windows, render a picker, and fill only companion slots.
 - Tray application context: user controls, lifecycle, display selection.
 
 UI code must call product logic, not duplicate it.
@@ -95,7 +105,7 @@ UI code must call product logic, not duplicate it.
 
 The process must be Per-Monitor-V2 DPI aware.
 
-All cursor, window, monitor, preview, and SetWindowPos coordinates must stay in the same coordinate space. Test with:
+All cursor, window, monitor, preview, picker, thumbnail, and SetWindowPos coordinates must stay in the correct coordinate space. Test with:
 - negative monitor coordinates;
 - target display to the left/right/above/below primary;
 - non-100% DPI on either display;
@@ -108,6 +118,8 @@ Do not snap on ordinary resize operations.
 A move/resize lifecycle event alone is not enough to prove a move. Classify obvious border-resize starts conservatively and skip them.
 
 Never keep snapping after the move ends.
+
+Starting a new drag cancels any open Snap Assist session.
 
 At physical display edges Windows Snap may also appear; our final SetWindowPos may override the result only when our own preview target was active at release.
 
@@ -128,9 +140,12 @@ Manual verification on Windows should cover:
 - left/right half;
 - top/bottom half;
 - four quarter snaps;
+- half Snap Assist fills only the opposite half;
+- quarter Snap Assist fills only the other three quarters of the same logical submonitor;
+- cancel Snap Assist with Escape;
 - move back to laptop without interference;
 - disconnect/reconnect target display;
-- exit while hooks are active;
+- exit while hooks/picker are active;
 - elevated target window fails harmlessly;
 - DPI scaling and negative display coordinates.
 

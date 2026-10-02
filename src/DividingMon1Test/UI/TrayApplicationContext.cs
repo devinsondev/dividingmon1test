@@ -8,8 +8,10 @@ internal sealed class TrayApplicationContext : ApplicationContext
 {
     private readonly TargetDisplayService _displays = new();
     private readonly PreviewOverlayForm _overlay = new();
+    private readonly SnapAssistController _snapAssist = new();
     private readonly ContextMenuStrip _menu = new();
     private readonly ToolStripMenuItem _enabledItem;
+    private readonly ToolStripMenuItem _snapAssistItem;
     private readonly ToolStripMenuItem _targetMenu;
     private readonly ToolStripMenuItem _sensitivityMenu;
     private readonly NotifyIcon _notifyIcon;
@@ -30,6 +32,13 @@ internal sealed class TrayApplicationContext : ApplicationContext
         };
         _enabledItem.CheckedChanged += EnabledItemOnCheckedChanged;
 
+        _snapAssistItem = new ToolStripMenuItem("Snap Assist suggestions")
+        {
+            CheckOnClick = true,
+            Checked = true
+        };
+        _snapAssistItem.CheckedChanged += SnapAssistItemOnCheckedChanged;
+
         _targetMenu = new ToolStripMenuItem("Target display");
         _targetMenu.DropDownOpening += TargetMenuOnDropDownOpening;
 
@@ -44,6 +53,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _menu.Items.Add(title);
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add(_enabledItem);
+        _menu.Items.Add(_snapAssistItem);
         _menu.Items.Add(_targetMenu);
         _menu.Items.Add(_sensitivityMenu);
         _menu.Items.Add(new ToolStripSeparator());
@@ -59,7 +69,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         try
         {
-            _controller = new WindowDragController(_displays, _overlay);
+            _controller = new WindowDragController(_displays, _overlay, _snapAssist);
             _controller.EdgeThreshold = 48;
             UpdateNotifyText();
         }
@@ -109,6 +119,13 @@ internal sealed class TrayApplicationContext : ApplicationContext
         }
     }
 
+    private void SnapAssistItemOnCheckedChanged(object? sender, EventArgs e)
+    {
+        _ = sender;
+        _ = e;
+        _snapAssist.Enabled = _snapAssistItem.Checked;
+    }
+
     private void TargetMenuOnDropDownOpening(object? sender, EventArgs e)
     {
         _ = sender;
@@ -132,6 +149,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
             {
                 if (_displays.TrySelect(deviceName))
                 {
+                    _snapAssist.Cancel();
                     UpdateNotifyText();
                 }
             };
@@ -181,6 +199,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     {
         _notifyIcon.Visible = false;
         _controller?.Dispose();
+        _snapAssist.Dispose();
         _overlay.Dispose();
         DisposeTargetMenuItems();
         _menu.Dispose();

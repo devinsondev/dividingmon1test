@@ -64,7 +64,7 @@ public static class SnapLayout
         var nearBottom = submonitor.Bottom - 1 - cursor.Y < threshold;
 
         var kind = ResolveKind(nearLeft, nearRight, nearTop, nearBottom);
-        var destination = Slice(submonitor, kind);
+        var destination = GetSlice(submonitor, kind);
         target = new SnapTarget(index, submonitor, destination, kind);
         return true;
     }
@@ -95,6 +95,32 @@ public static class SnapLayout
         };
     }
 
+    public static Rectangle GetSlice(Rectangle area, SnapKind kind)
+    {
+        var leftWidth = area.Width / 2;
+        var topHeight = area.Height / 2;
+        var rightWidth = area.Width - leftWidth;
+        var bottomHeight = area.Height - topHeight;
+
+        return kind switch
+        {
+            SnapKind.Full => area,
+            SnapKind.LeftHalf => new Rectangle(area.Left, area.Top, leftWidth, area.Height),
+            SnapKind.RightHalf => new Rectangle(area.Left + leftWidth, area.Top, rightWidth, area.Height),
+            SnapKind.TopHalf => new Rectangle(area.Left, area.Top, area.Width, topHeight),
+            SnapKind.BottomHalf => new Rectangle(area.Left, area.Top + topHeight, area.Width, bottomHeight),
+            SnapKind.TopLeftQuarter => new Rectangle(area.Left, area.Top, leftWidth, topHeight),
+            SnapKind.TopRightQuarter => new Rectangle(area.Left + leftWidth, area.Top, rightWidth, topHeight),
+            SnapKind.BottomLeftQuarter => new Rectangle(area.Left, area.Top + topHeight, leftWidth, bottomHeight),
+            SnapKind.BottomRightQuarter => new Rectangle(
+                area.Left + leftWidth,
+                area.Top + topHeight,
+                rightWidth,
+                bottomHeight),
+            _ => area
+        };
+    }
+
     private static int GetSubmonitorIndex(Rectangle bounds, Point cursor)
     {
         var splitX = bounds.Left + (bounds.Width / 2);
@@ -122,31 +148,5 @@ public static class SnapLayout
         if (top) return SnapKind.TopHalf;
         if (bottom) return SnapKind.BottomHalf;
         return SnapKind.Full;
-    }
-
-    private static Rectangle Slice(Rectangle area, SnapKind kind)
-    {
-        var leftWidth = area.Width / 2;
-        var topHeight = area.Height / 2;
-        var rightWidth = area.Width - leftWidth;
-        var bottomHeight = area.Height - topHeight;
-
-        return kind switch
-        {
-            SnapKind.Full => area,
-            SnapKind.LeftHalf => new Rectangle(area.Left, area.Top, leftWidth, area.Height),
-            SnapKind.RightHalf => new Rectangle(area.Left + leftWidth, area.Top, rightWidth, area.Height),
-            SnapKind.TopHalf => new Rectangle(area.Left, area.Top, area.Width, topHeight),
-            SnapKind.BottomHalf => new Rectangle(area.Left, area.Top + topHeight, area.Width, bottomHeight),
-            SnapKind.TopLeftQuarter => new Rectangle(area.Left, area.Top, leftWidth, topHeight),
-            SnapKind.TopRightQuarter => new Rectangle(area.Left + leftWidth, area.Top, rightWidth, topHeight),
-            SnapKind.BottomLeftQuarter => new Rectangle(area.Left, area.Top + topHeight, leftWidth, bottomHeight),
-            SnapKind.BottomRightQuarter => new Rectangle(
-                area.Left + leftWidth,
-                area.Top + topHeight,
-                rightWidth,
-                bottomHeight),
-            _ => area
-        };
     }
 }
