@@ -74,11 +74,10 @@ internal sealed class SnapAssistPickerForm : Form
     {
         base.OnPaint(e);
 
-        using var headerFont = new Font(SystemFonts.MessageBoxFont, FontStyle.Bold);
         TextRenderer.DrawText(
             e.Graphics,
             GetHeaderText(),
-            headerFont,
+            Font,
             new Rectangle(OuterPadding, 4, Math.Max(0, ClientSize.Width - 90), HeaderHeight - 8),
             ForeColor,
             TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
@@ -186,7 +185,12 @@ internal sealed class SnapAssistPickerForm : Form
             SourceClientAreaOnly = false
         };
 
-        DwmMethods.DwmUpdateThumbnailProperties(thumbnail, ref properties);
+        var updateResult = DwmMethods.DwmUpdateThumbnailProperties(thumbnail, ref properties);
+        if (updateResult < 0)
+        {
+            _ = DwmMethods.DwmUnregisterThumbnail(thumbnail);
+            _thumbnails.Remove(thumbnail);
+        }
     }
 
     private static Rectangle FitThumbnail(IntPtr thumbnail, Rectangle area)
@@ -315,7 +319,7 @@ internal sealed class SnapAssistPickerForm : Form
     {
         foreach (var thumbnail in _thumbnails)
         {
-            DwmMethods.DwmUnregisterThumbnail(thumbnail);
+            _ = DwmMethods.DwmUnregisterThumbnail(thumbnail);
         }
 
         _thumbnails.Clear();
