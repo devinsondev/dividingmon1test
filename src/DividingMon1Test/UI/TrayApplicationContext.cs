@@ -117,7 +117,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         DisposeTargetMenuItems();
 
         var selected = _displays.GetTarget()?.DeviceName;
-        foreach (var screen in _displays.GetScreens())
+        foreach (var screen in TargetDisplayService.GetScreens())
         {
             var deviceName = screen.DeviceName;
             var item = new ToolStripMenuItem(TargetDisplayService.Describe(screen))
