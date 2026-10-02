@@ -12,7 +12,6 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private readonly ContextMenuStrip _menu = new();
     private readonly ToolStripMenuItem _enabledItem;
     private readonly ToolStripMenuItem _snapAssistItem;
-    private readonly ToolStripMenuItem _windowsSnapSuppressionItem;
     private readonly ToolStripMenuItem _targetMenu;
     private readonly ToolStripMenuItem _sensitivityMenu;
     private readonly NotifyIcon _notifyIcon;
@@ -40,14 +39,6 @@ internal sealed class TrayApplicationContext : ApplicationContext
         };
         _snapAssistItem.CheckedChanged += SnapAssistItemOnCheckedChanged;
 
-        _windowsSnapSuppressionItem = new ToolStripMenuItem("Suppress Windows Snap while dragging on target")
-        {
-            CheckOnClick = true,
-            Checked = true,
-            ToolTipText = "Temporarily disables Windows edge docking only while the pointer is on the target display."
-        };
-        _windowsSnapSuppressionItem.CheckedChanged += WindowsSnapSuppressionItemOnCheckedChanged;
-
         _targetMenu = new ToolStripMenuItem("Target display");
         _targetMenu.DropDownOpening += TargetMenuOnDropDownOpening;
 
@@ -63,7 +54,6 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add(_enabledItem);
         _menu.Items.Add(_snapAssistItem);
-        _menu.Items.Add(_windowsSnapSuppressionItem);
         _menu.Items.Add(_targetMenu);
         _menu.Items.Add(_sensitivityMenu);
         _menu.Items.Add(new ToolStripSeparator());
@@ -81,7 +71,6 @@ internal sealed class TrayApplicationContext : ApplicationContext
         {
             _controller = new WindowDragController(_displays, _overlay, _snapAssist);
             _controller.EdgeThreshold = 48;
-            _controller.SuppressWindowsSnapOnTarget = true;
             UpdateNotifyText();
         }
         catch (Win32Exception exception)
@@ -135,17 +124,6 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _ = sender;
         _ = e;
         _snapAssist.Enabled = _snapAssistItem.Checked;
-    }
-
-    private void WindowsSnapSuppressionItemOnCheckedChanged(object? sender, EventArgs e)
-    {
-        _ = sender;
-        _ = e;
-
-        if (_controller is not null)
-        {
-            _controller.SuppressWindowsSnapOnTarget = _windowsSnapSuppressionItem.Checked;
-        }
     }
 
     private void TargetMenuOnDropDownOpening(object? sender, EventArgs e)

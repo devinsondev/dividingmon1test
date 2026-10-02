@@ -34,8 +34,7 @@ While the user drags a normal top-level window:
 - touching its top/bottom edge previews and snaps to its top/bottom half;
 - touching one of its corners previews and snaps to that quarter;
 - a visible non-activating overlay shows the exact destination before release;
-- dragging on displays other than the configured target is not modified;
-- by default, documented Windows edge docking is temporarily suppressed only while an active drag pointer is inside the configured target display.
+- dragging on displays other than the configured target is not modified.
 
 After a half or quarter snap, optional Snap Assist suggestions MUST stay inside that same logical submonitor:
 - half snap -> offer windows for the opposite half only;
@@ -122,13 +121,7 @@ Never keep snapping after the move ends.
 
 Starting a new drag cancels any open Snap Assist session.
 
-Windows Snap conflict suppression is enabled by default:
-- use only documented SystemParametersInfo window-arrangement APIs;
-- suppress only dock-moving behavior while an active drag pointer is inside the target display;
-- restore the user's previous dock-moving value immediately when the pointer leaves the target, the drag ends, snapping is disabled, or the app exits;
-- use fWinIni = 0 so the profile/registry is not persisted and no settings-change broadcast is requested;
-- do not alter maximize-hover layouts or unrelated Windows settings;
-- no registry writes or undocumented shell toggles may be used.
+At physical display edges Windows Snap may also appear; our final SetWindowPos may override the result only when our own preview target was active at release.
 
 ## 8. Verification
 

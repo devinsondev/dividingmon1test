@@ -24,7 +24,6 @@ internal static class Program
         AssertOddPartitionCoversMonitor();
         AssertHalfCompanion();
         AssertQuarterCompanions();
-        AssertPhysicalEdgeGuard();
 
         Console.WriteLine("Geometry self-test passed.");
         return 0;
@@ -90,56 +89,6 @@ internal static class Program
             zones[1].Bottom != zones[3].Top)
         {
             throw new InvalidOperationException("Odd-size partition contains a gap or overlap.");
-        }
-    }
-
-    private static void AssertPhysicalEdgeGuard()
-    {
-        var monitor = new Rectangle(0, 0, 1920, 1080);
-        var guard = SnapLayout.DefaultPhysicalEdgeGuard;
-
-        if (SnapLayout.TryResolve(
-                monitor,
-                new Point(1, 270),
-                SnapLayout.DefaultEdgeThreshold,
-                guard,
-                out _))
-        {
-            throw new InvalidOperationException("Physical left edge must be reserved for Windows Snap.");
-        }
-
-        if (!SnapLayout.TryResolve(
-                monitor,
-                new Point(guard, 270),
-                SnapLayout.DefaultEdgeThreshold,
-                guard,
-                out var insetTarget) ||
-            insetTarget.Kind != SnapKind.LeftHalf ||
-            insetTarget.SubmonitorIndex != 1)
-        {
-            throw new InvalidOperationException("Inset virtual left edge did not resolve.");
-        }
-
-        if (SnapLayout.TryResolve(
-                monitor,
-                new Point(960, 1),
-                SnapLayout.DefaultEdgeThreshold,
-                guard,
-                out _))
-        {
-            throw new InvalidOperationException("Physical top edge must be reserved for Windows Snap.");
-        }
-
-        if (!SnapLayout.TryResolve(
-                monitor,
-                new Point(960, 540),
-                SnapLayout.DefaultEdgeThreshold,
-                guard,
-                out var internalTarget) ||
-            internalTarget.Kind != SnapKind.TopLeftQuarter ||
-            internalTarget.SubmonitorIndex != 4)
-        {
-            throw new InvalidOperationException("Internal virtual corner must remain active.");
         }
     }
 

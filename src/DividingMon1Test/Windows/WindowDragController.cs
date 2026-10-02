@@ -16,7 +16,6 @@ internal sealed class WindowDragController : IDisposable
     private readonly TargetDisplayService _displays;
     private readonly PreviewOverlayForm _overlay;
     private readonly SnapAssistController _snapAssist;
-    private readonly WindowsSnapSuppression _windowsSnap = new();
     private readonly NativeMethods.WinEventProc _winEventProc;
     private readonly System.Windows.Forms.Timer _pollTimer;
 
@@ -83,12 +82,6 @@ internal sealed class WindowDragController : IDisposable
         set => _edgeThreshold = Math.Clamp(value, 16, 96);
     }
 
-    internal bool SuppressWindowsSnapOnTarget
-    {
-        get => _windowsSnap.Enabled;
-        set => _windowsSnap.Enabled = value;
-    }
-
     private void OnWinEvent(
         IntPtr hook,
         uint eventType,
@@ -149,8 +142,6 @@ internal sealed class WindowDragController : IDisposable
         {
             _snapAssist.Start(target, window);
         }
-
-        _windowsSnap.Release();
     }
 
     private void PollTimerOnTick(object? sender, EventArgs e)
@@ -180,24 +171,19 @@ internal sealed class WindowDragController : IDisposable
             !NativeMethods.IsWindow(_movingWindow) ||
             !NativeMethods.GetCursorPos(out var nativePoint))
         {
-            _windowsSnap.Release();
             return null;
         }
 
         var screen = _displays.GetTarget();
         if (screen is null)
         {
-            _windowsSnap.Release();
             return null;
         }
 
         monitorBounds = screen.Bounds;
-        var point = nativePoint.ToPoint();
-        _windowsSnap.Update(monitorBounds.Contains(point));
-
         return SnapLayout.TryResolve(
             monitorBounds,
-            point,
+            nativePoint.ToPoint(),
             _edgeThreshold,
             out var target)
             ? target
@@ -227,7 +213,6 @@ internal sealed class WindowDragController : IDisposable
     {
         _pollTimer.Stop();
         _overlay.HidePreview();
-        _windowsSnap.Release();
         _movingWindow = IntPtr.Zero;
     }
 
@@ -240,7 +225,6 @@ internal sealed class WindowDragController : IDisposable
 
         _disposed = true;
         CancelTracking();
-        _windowsSnap.Dispose();
         _pollTimer.Dispose();
 
         if (_hook != IntPtr.Zero)
