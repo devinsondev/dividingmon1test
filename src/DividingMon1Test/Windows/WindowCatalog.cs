@@ -49,8 +49,8 @@ internal static class WindowCatalog
             return false;
         }
 
-        NativeMethods.GetWindowThreadProcessId(window, out var processId);
-        if (processId == 0 || processId == ownProcessId)
+        var threadId = NativeMethods.GetWindowThreadProcessId(window, out var processId);
+        if (threadId == 0 || processId == 0 || processId == ownProcessId)
         {
             return false;
         }
@@ -73,13 +73,14 @@ internal static class WindowCatalog
             return false;
         }
 
-        var builder = new StringBuilder(length + 1);
-        if (NativeMethods.GetWindowTextW(window, builder, builder.Capacity) <= 0)
+        var buffer = new char[length + 1];
+        var copied = NativeMethods.GetWindowTextW(window, buffer, buffer.Length);
+        if (copied <= 0)
         {
             return false;
         }
 
-        title = builder.ToString().Trim();
+        title = new string(buffer, 0, copied).Trim();
         return title.Length > 0;
     }
 
