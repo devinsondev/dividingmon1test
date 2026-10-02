@@ -6,7 +6,7 @@ internal sealed class TargetDisplayService
 
     public string? SelectedDeviceName => _selectedDeviceName;
 
-    public IReadOnlyList<Screen> GetScreens()
+    public static IReadOnlyList<Screen> GetScreens()
     {
         return Screen.AllScreens
             .OrderBy(screen => screen.DeviceName, StringComparer.OrdinalIgnoreCase)
