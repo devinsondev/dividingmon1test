@@ -34,7 +34,8 @@ While the user drags a normal top-level window:
 - touching its top/bottom edge previews and snaps to its top/bottom half;
 - touching one of its corners previews and snaps to that quarter;
 - a visible non-activating overlay shows the exact destination before release;
-- dragging on displays other than the configured target is not modified.
+- dragging on displays other than the configured target is not modified;
+- by default, a physical-edge guard reserves the real outer target-display edges for Windows Snap while our outer logical edges are activated on inset virtual rails.
 
 After a half or quarter snap, optional Snap Assist suggestions MUST stay inside that same logical submonitor:
 - half snap -> offer windows for the opposite half only;
@@ -121,7 +122,12 @@ Never keep snapping after the move ends.
 
 Starting a new drag cancels any open Snap Assist session.
 
-At physical display edges Windows Snap may also appear; our final SetWindowPos may override the result only when our own preview target was active at release.
+Windows Snap compatibility is enabled by default:
+- the real outer edge guard of the target display MUST return no DividingMon snap target;
+- outer half/corner activation MUST use inset virtual rails beyond that guard;
+- internal logical-submonitor edges stay active normally;
+- the primary display and global Windows Snap settings MUST NOT be changed;
+- no registry or undocumented shell toggles may be used to suppress Windows Snap per monitor.
 
 ## 8. Verification
 

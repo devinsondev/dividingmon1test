@@ -39,6 +39,7 @@ public readonly record struct SnapTarget(
 public static class SnapLayout
 {
     public const int DefaultEdgeThreshold = 48;
+    public const int DefaultPhysicalEdgeGuard = 72;
 
     public static bool TryResolve(
         Rectangle monitorBounds,
@@ -46,9 +47,32 @@ public static class SnapLayout
         int edgeThreshold,
         out SnapTarget target)
     {
+        return TryResolve(
+            monitorBounds,
+            cursor,
+            edgeThreshold,
+            physicalEdgeGuard: 0,
+            out target);
+    }
+
+    public static bool TryResolve(
+        Rectangle monitorBounds,
+        Point cursor,
+        int edgeThreshold,
+        int physicalEdgeGuard,
+        out SnapTarget target)
+    {
         target = default;
 
-        if (monitorBounds.Width < 2 || monitorBounds.Height < 2 || !monitorBounds.Contains(cursor))
+        if (monitorBounds.Width < 2 ||
+            monitorBounds.Height < 2 ||
+            !monitorBounds.Contains(cursor))
+        {
+            return false;
+        }
+
+        var guard = ClampPhysicalEdgeGuard(monitorBounds, physicalEdgeGuard);
+        if (guard > 0 && IsInPhysicalEdgeGuard(monitorBounds, cursor, guard))
         {
             return false;
         }
@@ -58,10 +82,23 @@ public static class SnapLayout
         var maxThreshold = Math.Max(1, Math.Min(submonitor.Width, submonitor.Height) / 3);
         var threshold = Math.Clamp(edgeThreshold, 1, maxThreshold);
 
-        var nearLeft = cursor.X - submonitor.Left < threshold;
-        var nearRight = submonitor.Right - 1 - cursor.X < threshold;
-        var nearTop = cursor.Y - submonitor.Top < threshold;
-        var nearBottom = submonitor.Bottom - 1 - cursor.Y < threshold;
+        var leftEdge = submonitor.Left == monitorBounds.Left
+            ? submonitor.Left + guard
+            : submonitor.Left;
+        var rightEdge = submonitor.Right == monitorBounds.Right
+            ? submonitor.Right - 1 - guard
+            : submonitor.Right - 1;
+        var topEdge = submonitor.Top == monitorBounds.Top
+            ? submonitor.Top + guard
+            : submonitor.Top;
+        var bottomEdge = submonitor.Bottom == monitorBounds.Bottom
+            ? submonitor.Bottom - 1 - guard
+            : submonitor.Bottom - 1;
+
+        var nearLeft = cursor.X >= leftEdge && cursor.X - leftEdge < threshold;
+        var nearRight = cursor.X <= rightEdge && rightEdge - cursor.X < threshold;
+        var nearTop = cursor.Y >= topEdge && cursor.Y - topEdge < threshold;
+        var nearBottom = cursor.Y <= bottomEdge && bottomEdge - cursor.Y < threshold;
 
         var kind = ResolveKind(nearLeft, nearRight, nearTop, nearBottom);
         var destination = GetSlice(submonitor, kind);
@@ -135,6 +172,20 @@ public static class SnapLayout
             (false, true) => 3,
             (true, true) => 4
         };
+    }
+
+    private static int ClampPhysicalEdgeGuard(Rectangle bounds, int guard)
+    {
+        var maxGuard = Math.Max(0, Math.Min(bounds.Width, bounds.Height) / 4);
+        return Math.Clamp(guard, 0, maxGuard);
+    }
+
+    private static bool IsInPhysicalEdgeGuard(Rectangle bounds, Point cursor, int guard)
+    {
+        return cursor.X - bounds.Left < guard ||
+            bounds.Right - 1 - cursor.X < guard ||
+            cursor.Y - bounds.Top < guard ||
+            bounds.Bottom - 1 - cursor.Y < guard;
     }
 
     private static SnapKind ResolveKind(bool left, bool right, bool top, bool bottom)

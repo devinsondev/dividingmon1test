@@ -24,6 +24,7 @@ internal sealed class WindowDragController : IDisposable
     private bool _enabled = true;
     private bool _disposed;
     private int _edgeThreshold = SnapLayout.DefaultEdgeThreshold;
+    private int _physicalEdgeGuard = SnapLayout.DefaultPhysicalEdgeGuard;
 
     internal WindowDragController(
         TargetDisplayService displays,
@@ -80,6 +81,12 @@ internal sealed class WindowDragController : IDisposable
     {
         get => _edgeThreshold;
         set => _edgeThreshold = Math.Clamp(value, 16, 96);
+    }
+
+    internal int PhysicalEdgeGuard
+    {
+        get => _physicalEdgeGuard;
+        set => _physicalEdgeGuard = Math.Clamp(value, 0, 256);
     }
 
     private void OnWinEvent(
@@ -185,6 +192,7 @@ internal sealed class WindowDragController : IDisposable
             monitorBounds,
             nativePoint.ToPoint(),
             _edgeThreshold,
+            _physicalEdgeGuard,
             out var target)
             ? target
             : null;

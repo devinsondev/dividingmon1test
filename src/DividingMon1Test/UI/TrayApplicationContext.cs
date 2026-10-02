@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using DividingMon1Test.Display;
+using DividingMon1Test.Geometry;
 using DividingMon1Test.Windows;
 
 namespace DividingMon1Test.UI;
@@ -12,6 +13,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private readonly ContextMenuStrip _menu = new();
     private readonly ToolStripMenuItem _enabledItem;
     private readonly ToolStripMenuItem _snapAssistItem;
+    private readonly ToolStripMenuItem _windowsSnapCompatibilityItem;
     private readonly ToolStripMenuItem _targetMenu;
     private readonly ToolStripMenuItem _sensitivityMenu;
     private readonly NotifyIcon _notifyIcon;
@@ -39,6 +41,14 @@ internal sealed class TrayApplicationContext : ApplicationContext
         };
         _snapAssistItem.CheckedChanged += SnapAssistItemOnCheckedChanged;
 
+        _windowsSnapCompatibilityItem = new ToolStripMenuItem("Keep Windows Snap on physical edges")
+        {
+            CheckOnClick = true,
+            Checked = true,
+            ToolTipText = "Uses inset virtual edges on the target display so Windows owns the real screen edges."
+        };
+        _windowsSnapCompatibilityItem.CheckedChanged += WindowsSnapCompatibilityItemOnCheckedChanged;
+
         _targetMenu = new ToolStripMenuItem("Target display");
         _targetMenu.DropDownOpening += TargetMenuOnDropDownOpening;
 
@@ -54,6 +64,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add(_enabledItem);
         _menu.Items.Add(_snapAssistItem);
+        _menu.Items.Add(_windowsSnapCompatibilityItem);
         _menu.Items.Add(_targetMenu);
         _menu.Items.Add(_sensitivityMenu);
         _menu.Items.Add(new ToolStripSeparator());
@@ -71,6 +82,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         {
             _controller = new WindowDragController(_displays, _overlay, _snapAssist);
             _controller.EdgeThreshold = 48;
+            _controller.PhysicalEdgeGuard = SnapLayout.DefaultPhysicalEdgeGuard;
             UpdateNotifyText();
         }
         catch (Win32Exception exception)
@@ -124,6 +136,19 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _ = sender;
         _ = e;
         _snapAssist.Enabled = _snapAssistItem.Checked;
+    }
+
+    private void WindowsSnapCompatibilityItemOnCheckedChanged(object? sender, EventArgs e)
+    {
+        _ = sender;
+        _ = e;
+
+        if (_controller is not null)
+        {
+            _controller.PhysicalEdgeGuard = _windowsSnapCompatibilityItem.Checked
+                ? SnapLayout.DefaultPhysicalEdgeGuard
+                : 0;
+        }
     }
 
     private void TargetMenuOnDropDownOpening(object? sender, EventArgs e)
